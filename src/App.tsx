@@ -1,8 +1,10 @@
 import { FormEvent, LegacyRef, useEffect, useRef, useState } from "react";
 import {
   Contract,
+  concat,
   hexlify,
   isHexString,
+  keccak256,
   toUtf8Bytes,
   toUtf8String,
 } from "ethers";
@@ -21,6 +23,10 @@ const options = [
   { id: 2, value: "hex" },
 ];
 
+const fucntionHash = hexlify(
+  keccak256(toUtf8Bytes("keccak256(utf8)"))
+).substring(0, 10);
+
 function App() {
   const [error, setError] = useState<JSX.Element>();
   const [connected, setConnected] = useState(false);
@@ -28,7 +34,7 @@ function App() {
   const [address, setAddress] = useState<string>();
   const [uri, setUri] = useState<string>();
 
-  const [fetchedUri, setFetchedUri] = useState<string>();
+  const [fetchedUri, setFetchedUri] = useState<JSX.Element>();
 
   const ref = useRef<HTMLElement>();
 
@@ -44,7 +50,7 @@ function App() {
     setUri(userInput);
   };
 
-  const changeTokenUri = async (
+  const changeDefaultUri = async (
     event: React.MouseEvent<HTMLElement, MouseEvent>
   ) => {
     event.preventDefault();
@@ -88,14 +94,77 @@ function App() {
     ).connect(signer) as LSP8DropsDigitalAsset;
 
     if (value.value === "utf8") {
-      await lsp8.setDefaultTokenUri(toUtf8Bytes(uri), { gasLimit: 250_000 });
+      await lsp8.setDefaultTokenUri(concat([fucntionHash, toUtf8Bytes(uri)]));
     }
 
     if (value.value === "hex") {
       if (!isHexString(uri)) {
         console.log(`Uri is not hex. Value: ${uri}`);
       }
-      await lsp8.setDefaultTokenUri(uri, { gasLimit: 250_000 });
+
+      await lsp8.setDefaultTokenUri(concat([fucntionHash, uri]));
+    }
+  };
+
+  const changeDataKeyUri = async (
+    event: React.MouseEvent<HTMLElement, MouseEvent>
+  ) => {
+    event.preventDefault();
+
+    const { signer, error } = await getSigner();
+
+    if (error) {
+      setError(error);
+      return;
+    }
+
+    if (!address) {
+      setError(
+        <>
+          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
+          <p className="paragraph-inter-16-regular">
+            Please input a token address
+          </p>
+        </>
+      );
+      return;
+    }
+
+    if (!uri) {
+      setError(
+        <>
+          <h1 className="heading-inter-26-semi-bold pb-4">
+            New token URI not found
+          </h1>
+          <p className="paragraph-inter-16-regular">
+            Please input a new token URI
+          </p>
+        </>
+      );
+      return;
+    }
+
+    const lsp8 = new Contract(
+      address,
+      LSP8DropsDigitalAsset__factory.abi
+    ).connect(signer) as LSP8DropsDigitalAsset;
+
+    if (value.value === "utf8") {
+      await lsp8.setData(
+        "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843",
+        concat([fucntionHash, toUtf8Bytes(uri)])
+      );
+    }
+
+    if (value.value === "hex") {
+      if (!isHexString(uri)) {
+        console.log(`Uri is not hex. Value: ${uri}`);
+      }
+
+      await lsp8.setData(
+        "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843",
+        concat([fucntionHash, uri])
+      );
     }
   };
 
@@ -128,13 +197,49 @@ function App() {
       LSP8DropsDigitalAsset__factory.abi
     ).connect(signer) as LSP8DropsDigitalAsset;
 
-    setFetchedUri(toUtf8String(await lsp8.defaultTokenUri()));
+    const defaultUri = await lsp8.defaultTokenUri();
+    const dataKeyUri = await lsp8.getData(
+      "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843"
+    );
+
+    setFetchedUri(
+      <>
+        <p>Default URI</p>
+        <a
+          href={uriToLink(defaultUri)}
+          target="_blank"
+          rel="noreferrer"
+          className=" hover:underline text-purple-51 hover:text-purple-41"
+        >
+          {uriToLink(defaultUri)}
+        </a>
+        <p>Data Key URI</p>
+        <a
+          href={uriToLink(dataKeyUri)}
+          target="_blank"
+          rel="noreferrer"
+          className=" hover:underline text-purple-51 hover:text-purple-41"
+        >
+          {uriToLink(dataKeyUri)}
+        </a>
+      </>
+    );
   };
 
-  const fixUrl = (link: string) => {
+  const uriToLink = (uri: string) => {
+    console.log(fucntionHash);
+    console.log(uri);
+
+    let patchedLink = uri;
+    if (uri.startsWith(fucntionHash)) {
+      patchedLink = `0x${patchedLink.replace(fucntionHash, "")}`;
+    }
+
+    const link = toUtf8String(patchedLink);
     if (link.startsWith("ipfs://")) {
       return link.replace("ipfs://", "https://ipfs.io/ipfs/");
     }
+
     return link;
   };
 
@@ -155,10 +260,7 @@ function App() {
     <div className="min-h-screen relative">
       <Connect setError={setError} setConnected={setConnected} />{" "}
       <div className="m-4 flex justify-center content-center">
-        <lukso-card variant="with-header" custom-class="" size="medium">
-          <div slot="header" className="p-6">
-            <h1 className="heading-inter-26-semi-bold p-2">Change token URI</h1>
-          </div>
+        <lukso-card variant="basic" custom-class="" size="medium">
           <div slot="content" className="p-6 flex flex-col items-center">
             <lukso-input
               placeholder="Token Address"
@@ -192,9 +294,9 @@ function App() {
                   size="medium"
                   type="button"
                   count="0"
-                  onClick={async (event) => await changeTokenUri(event)}
+                  onClick={async (event) => await changeDefaultUri(event)}
                 >
-                  Change URI
+                  Change Default URI
                 </lukso-button>
               ) : (
                 <lukso-button
@@ -205,7 +307,30 @@ function App() {
                   count="0"
                   disabled
                 >
-                  Change URI
+                  Change Default URI
+                </lukso-button>
+              )}
+              {connected ? (
+                <lukso-button
+                  custom-class="ml-4"
+                  variant="landing"
+                  size="medium"
+                  type="button"
+                  count="0"
+                  onClick={async (event) => await changeDataKeyUri(event)}
+                >
+                  Change Data Key URI
+                </lukso-button>
+              ) : (
+                <lukso-button
+                  custom-class="ml-4"
+                  variant="landing"
+                  size="medium"
+                  type="button"
+                  count="0"
+                  disabled
+                >
+                  Change Data Key URI
                 </lukso-button>
               )}
             </div>
@@ -233,18 +358,7 @@ function App() {
                   Fetch Token URI
                 </lukso-button>
               )}
-              {fetchedUri ? (
-                <a
-                  href={fixUrl(fetchedUri)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className=" hover:underline text-purple-51 hover:text-purple-41"
-                >
-                  {fixUrl(fetchedUri)}
-                </a>
-              ) : (
-                <></>
-              )}
+              {fetchedUri ? fetchedUri : <></>}
             </div>
           </div>
         </lukso-card>
