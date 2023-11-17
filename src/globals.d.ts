@@ -1,3 +1,4 @@
+import { LuksoSelect } from "@lukso/web-components";
 import { LuksoButton } from "@lukso/web-components/dist/components/lukso-button";
 import { LuksoCard } from "@lukso/web-components/dist/components/lukso-card";
 import { LuksoCheckbox } from "@lukso/web-components/dist/components/lukso-checkbox";
@@ -40,6 +41,7 @@ declare global {
       "lukso-progress": WebComponent<LuksoProgress>;
       "lukso-share": WebComponent<LuksoShare>;
       "lukso-tag": WebComponent<LuksoTag>;
+      "lukso-select": WebComponent<LuksoSelect>;
     }
   }
 
