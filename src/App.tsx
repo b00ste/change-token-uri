@@ -27,6 +27,9 @@ function App() {
 
   const [address, setAddress] = useState<string>();
   const [uri, setUri] = useState<string>();
+
+  const [fetchedUri, setFetchedUri] = useState<string>();
+
   const ref = useRef<HTMLElement>();
 
   const [value, setValue] = useState(options[0]);
@@ -53,7 +56,29 @@ function App() {
       return;
     }
 
-    if (!address || !uri) {
+    if (!address) {
+      setError(
+        <>
+          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
+          <p className="paragraph-inter-16-regular">
+            Please input a token address
+          </p>
+        </>
+      );
+      return;
+    }
+
+    if (!uri) {
+      setError(
+        <>
+          <h1 className="heading-inter-26-semi-bold pb-4">
+            New token URI not found
+          </h1>
+          <p className="paragraph-inter-16-regular">
+            Please input a new token URI
+          </p>
+        </>
+      );
       return;
     }
 
@@ -72,6 +97,45 @@ function App() {
       }
       await lsp8.setDefaultTokenUri(uri, { gasLimit: 250_000 });
     }
+  };
+
+  const getTokenUri = async (
+    event: React.MouseEvent<HTMLElement, MouseEvent>
+  ) => {
+    event.preventDefault();
+
+    const { signer, error } = await getSigner();
+
+    if (error) {
+      setError(error);
+      return;
+    }
+
+    if (!address) {
+      setError(
+        <>
+          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
+          <p className="paragraph-inter-16-regular">
+            Please input a token address
+          </p>
+        </>
+      );
+      return;
+    }
+
+    const lsp8 = new Contract(
+      address,
+      LSP8DropsDigitalAsset__factory.abi
+    ).connect(signer) as LSP8DropsDigitalAsset;
+
+    setFetchedUri(toUtf8String(await lsp8.defaultTokenUri()));
+  };
+
+  const fixUrl = (link: string) => {
+    if (link.startsWith("ipfs://")) {
+      return link.replace("ipfs://", "https://ipfs.io/ipfs/");
+    }
+    return link;
   };
 
   useEffect(() => {
@@ -112,7 +176,7 @@ function App() {
               }
               value={uri}
             />
-            <div className="flex items-center">
+            <div className="flex items-center mb-4">
               <lukso-select
                 ref={ref as unknown as LegacyRef<HTMLElement>}
                 id="select"
@@ -143,6 +207,43 @@ function App() {
                 >
                   Change URI
                 </lukso-button>
+              )}
+            </div>
+            <div className="flex flex-col items-center mb-4">
+              {connected ? (
+                <lukso-button
+                  custom-class="mb-4"
+                  variant="landing"
+                  size="medium"
+                  type="button"
+                  count="0"
+                  onClick={async (event) => getTokenUri(event)}
+                >
+                  Fetch Token URI
+                </lukso-button>
+              ) : (
+                <lukso-button
+                  custom-class="mb-4"
+                  variant="landing"
+                  size="medium"
+                  type="button"
+                  count="0"
+                  disabled
+                >
+                  Fetch Token URI
+                </lukso-button>
+              )}
+              {fetchedUri ? (
+                <a
+                  href={fixUrl(fetchedUri)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className=" hover:underline text-purple-51 hover:text-purple-41"
+                >
+                  {fixUrl(fetchedUri)}
+                </a>
+              ) : (
+                <></>
               )}
             </div>
           </div>
