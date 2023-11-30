@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@erc725/smart-contracts": "^6.0.0",
     "@lukso/lsp-smart-contracts": "^0.12.1",
     "@lukso/web-components": "^1.51.0",
     "@testing-library/jest-dom": "^5.17.0",
@@ -17,6 +18,7 @@
     "ethers": "^6.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.19.0",
     "react-scripts": "5.0.1",
     "sass": "^1.69.5",
     "tailwind": "^4.0.0",
@@ -25,7 +27,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "build:types": "typechain --target ethers-v6 --out-dir ./src/types src/artifacts/LSP8DropsDigitalAsset.json",
+    "build:types": "bash scripts/buildTypes.sh",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

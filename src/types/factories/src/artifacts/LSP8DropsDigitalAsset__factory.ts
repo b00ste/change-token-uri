@@ -14,11 +14,11 @@ import type {
   ContractDeployTransaction,
   ContractRunner,
 } from "ethers";
-import type { NonPayableOverrides } from "../common";
+import type { NonPayableOverrides } from "../../../common";
 import type {
   LSP8DropsDigitalAsset,
   LSP8DropsDigitalAssetInterface,
-} from "../LSP8DropsDigitalAsset";
+} from "../../../src/artifacts/LSP8DropsDigitalAsset";
 
 const _abi = [
   {

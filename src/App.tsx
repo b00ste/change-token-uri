@@ -1,387 +1,195 @@
-import { FormEvent, LegacyRef, useEffect, useRef, useState } from "react";
-import {
-  Contract,
-  concat,
-  hexlify,
-  isHexString,
-  keccak256,
-  toUtf8Bytes,
-  toUtf8String,
-} from "ethers";
+import { useState, createContext } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserProvider, Signer } from "ethers";
 
 // components
-import Connect from "./components/Connect";
+import Navbar from "./components/Navbar";
 
-// types
-import { LSP8DropsDigitalAsset, LSP8DropsDigitalAsset__factory } from "./types";
+// pages
+import Home from "./pages/Home";
+import DeployLSP7 from "./pages/DeployLSP7";
+import DeployLSP8 from "./pages/DeployLSP8";
+import IssuedAssets from "./pages/IssuedAssets";
 
-// utils
-import { getSigner } from "./helpers/utils";
+// helpers
+import { getSigner, getUniversalProfileData } from "./helpers/utils";
 
-const options = [
-  { id: 1, value: "utf8" },
-  { id: 2, value: "hex" },
-];
-
-const fucntionHash = hexlify(
-  keccak256(toUtf8Bytes("keccak256(utf8)"))
-).substring(0, 10);
+export const BrowserExtensionContext = createContext<{
+  provider?: BrowserProvider;
+  signer?: Signer;
+}>({});
 
 function App() {
   const [error, setError] = useState<JSX.Element>();
-  const [connected, setConnected] = useState(false);
-
-  const [address, setAddress] = useState<string>();
-  const [uri, setUri] = useState<string>();
-
-  const [fetchedUri, setFetchedUri] = useState<JSX.Element>();
-
-  const ref = useRef<HTMLElement>();
-
-  const [value, setValue] = useState(options[0]);
-
-  const onAddressInput = (event: React.FormEvent<HTMLInputElement>) => {
-    const userInput = event.currentTarget.value;
-    setAddress(userInput);
-  };
-
-  const onUriInput = (event: React.FormEvent<HTMLInputElement>) => {
-    const userInput = event.currentTarget.value;
-    setUri(userInput);
-  };
-
-  const changeDefaultUri = async (
-    event: React.MouseEvent<HTMLElement, MouseEvent>
-  ) => {
-    event.preventDefault();
-
-    const { signer, error } = await getSigner();
+  const [provider, setProvider] = useState<BrowserProvider>();
+  const [signer, setSigner] = useState<Signer>();
+  const [account, setAccount] = useState<JSX.Element>();
+  const connect = async () => {
+    const { signer, provider, error } = await getSigner();
 
     if (error) {
       setError(error);
-      return;
-    }
+    } else {
+      setSigner(signer);
+      setProvider(provider);
 
-    if (!address) {
-      setError(
-        <>
-          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
-          <p className="paragraph-inter-16-regular">
-            Please input a token address
-          </p>
-        </>
+      const {
+        name,
+        description,
+        links,
+        tags,
+        profileImageUrl,
+        backgroundImageUrl,
+        error: fetchError,
+      } = await getUniversalProfileData(
+        signer.address,
+        Number((await provider.getNetwork()).chainId)
       );
-      return;
-    }
 
-    if (!uri) {
-      setError(
-        <>
-          <h1 className="heading-inter-26-semi-bold pb-4">
-            New token URI not found
-          </h1>
-          <p className="paragraph-inter-16-regular">
-            Please input a new token URI
-          </p>
-        </>
-      );
-      return;
-    }
-
-    const lsp8 = new Contract(
-      address,
-      LSP8DropsDigitalAsset__factory.abi
-    ).connect(signer) as LSP8DropsDigitalAsset;
-
-    if (value.value === "utf8") {
-      await lsp8.setDefaultTokenUri(concat([fucntionHash, toUtf8Bytes(uri)]));
-    }
-
-    if (value.value === "hex") {
-      if (!isHexString(uri)) {
-        console.log(`Uri is not hex. Value: ${uri}`);
+      if (fetchError) {
+        setError(
+          <>
+            <h1 className="heading-inter-26-semi-bold pb-4">
+              Failed to fetch LSP3 Profile Metadata
+            </h1>
+            <p className="paragraph-inter-16-regular">{fetchError}</p>
+          </>
+        );
       }
 
-      await lsp8.setDefaultTokenUri(concat([fucntionHash, uri]));
-    }
-  };
-
-  const changeDataKeyUri = async (
-    event: React.MouseEvent<HTMLElement, MouseEvent>
-  ) => {
-    event.preventDefault();
-
-    const { signer, error } = await getSigner();
-
-    if (error) {
-      setError(error);
-      return;
-    }
-
-    if (!address) {
-      setError(
-        <>
-          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
-          <p className="paragraph-inter-16-regular">
-            Please input a token address
-          </p>
-        </>
-      );
-      return;
-    }
-
-    if (!uri) {
-      setError(
-        <>
-          <h1 className="heading-inter-26-semi-bold pb-4">
-            New token URI not found
-          </h1>
-          <p className="paragraph-inter-16-regular">
-            Please input a new token URI
-          </p>
-        </>
-      );
-      return;
-    }
-
-    const lsp8 = new Contract(
-      address,
-      LSP8DropsDigitalAsset__factory.abi
-    ).connect(signer) as LSP8DropsDigitalAsset;
-
-    if (value.value === "utf8") {
-      await lsp8.setData(
-        "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843",
-        concat([fucntionHash, toUtf8Bytes(uri)])
-      );
-    }
-
-    if (value.value === "hex") {
-      if (!isHexString(uri)) {
-        console.log(`Uri is not hex. Value: ${uri}`);
-      }
-
-      await lsp8.setData(
-        "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843",
-        concat([fucntionHash, uri])
-      );
-    }
-  };
-
-  const getTokenUri = async (
-    event: React.MouseEvent<HTMLElement, MouseEvent>
-  ) => {
-    event.preventDefault();
-
-    const { signer, error } = await getSigner();
-
-    if (error) {
-      setError(error);
-      return;
-    }
-
-    if (!address) {
-      setError(
-        <>
-          <h1 className="heading-inter-26-semi-bold pb-4">Address not found</h1>
-          <p className="paragraph-inter-16-regular">
-            Please input a token address
-          </p>
-        </>
-      );
-      return;
-    }
-
-    const lsp8 = new Contract(
-      address,
-      LSP8DropsDigitalAsset__factory.abi
-    ).connect(signer) as LSP8DropsDigitalAsset;
-
-    const defaultUri = await lsp8.defaultTokenUri();
-    const dataKeyUri = await lsp8.getData(
-      "0x1a7628600c3bac7101f53697f48df381ddc36b9015e7d7c9c5633d1252aa2843"
-    );
-
-    setFetchedUri(
-      <>
-        <p>Default URI</p>
-        <a
-          href={uriToLink(defaultUri)}
-          target="_blank"
-          rel="noreferrer"
-          className=" hover:underline text-purple-51 hover:text-purple-41"
+      setAccount(
+        <lukso-card
+          variant="profile"
+          background-url={backgroundImageUrl}
+          profile-url={profileImageUrl}
+          profile-address={signer.address}
+          size="medium"
         >
-          {uriToLink(defaultUri)}
-        </a>
-        <p>Data Key URI</p>
-        <a
-          href={uriToLink(dataKeyUri)}
-          target="_blank"
-          rel="noreferrer"
-          className=" hover:underline text-purple-51 hover:text-purple-41"
-        >
-          {uriToLink(dataKeyUri)}
-        </a>
-      </>
-    );
-  };
-
-  const uriToLink = (uri: string) => {
-    console.log(fucntionHash);
-    console.log(uri);
-
-    let patchedLink = uri;
-    if (uri.startsWith(fucntionHash)) {
-      patchedLink = `0x${patchedLink.replace(fucntionHash, "")}`;
-    }
-
-    const link = toUtf8String(patchedLink);
-    if (link.startsWith("ipfs://")) {
-      return link.replace("ipfs://", "https://ipfs.io/ipfs/");
-    }
-
-    return link;
-  };
-
-  useEffect(() => {
-    const meth = ({ detail: { value: _value = options[0] } = {} }) => {
-      setValue(
-        options.find(({ value }) => _value.value === value) || options[0]
-      );
-    };
-    const select = ref.current as any;
-    select?.addEventListener("on-select", meth);
-    return () => {
-      select?.removeEventListener("on-select", meth);
-    };
-  }, [ref, value]);
-
-  return (
-    <div className="min-h-screen relative">
-      <Connect setError={setError} setConnected={setConnected} />{" "}
-      <div className="m-4 flex justify-center content-center">
-        <lukso-card variant="basic" custom-class="" size="medium">
-          <div slot="content" className="p-6 flex flex-col items-center">
-            <lukso-input
-              placeholder="Token Address"
-              custom-class="mb-4"
-              onInput={(event) =>
-                onAddressInput(event as unknown as FormEvent<HTMLInputElement>)
-              }
-              value={address}
+          <div slot="header" className="p-6"></div>
+          <div slot="content" className="px-6 pb-9 flex flex-col items-center">
+            <lukso-username
+              name={name || "anonymous"}
+              address={signer.address}
             />
-            <lukso-input
-              placeholder="New Token URI"
-              custom-class="mb-4"
-              onInput={(event) =>
-                onUriInput(event as unknown as FormEvent<HTMLInputElement>)
-              }
-              value={uri}
-            />
-            <div className="flex items-center mb-4">
-              <lukso-select
-                ref={ref as unknown as LegacyRef<HTMLElement>}
-                id="select"
-                selected={JSON.stringify(value)}
-                value={JSON.stringify(value)}
-                options={JSON.stringify(options)}
-                open-top
+            <div className="hover:cursor-pointer hover:opacity-80">
+              <lukso-username
+                address={signer.address}
+                address-color="purple-51"
+                onClick={() => {
+                  navigator.clipboard.writeText(signer.address);
+                }}
               />
-              {connected ? (
-                <lukso-button
-                  custom-class="ml-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  onClick={async (event) => await changeDefaultUri(event)}
-                >
-                  Change Default URI
-                </lukso-button>
+            </div>
+            <div className="mt-2 mb-2 pt-2 border-t-2 flex">
+              {links ? (
+                Object.getOwnPropertyNames(links).map((index) => (
+                  <div className="mx-1" key={index}>
+                    {"| "}
+                    <a
+                      href={links[Number(index)].url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline text-purple-51 hover:text-purple-41 font-600"
+                    >
+                      {links[Number(index)].title}
+                    </a>
+                  </div>
+                ))
               ) : (
-                <lukso-button
-                  custom-class="ml-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  disabled
-                >
-                  Change Default URI
-                </lukso-button>
+                <></>
               )}
-              {connected ? (
-                <lukso-button
-                  custom-class="ml-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  onClick={async (event) => await changeDataKeyUri(event)}
-                >
-                  Change Data Key URI
-                </lukso-button>
+              {" |"}
+            </div>
+            <div className="mt-2 mb-2 pt-4 border-t-2 flex">
+              {tags ? (
+                Object.getOwnPropertyNames(tags).map((index) => (
+                  <div className="mx-1" key={tags[Number(index)]}>
+                    <lukso-tag size="small">{tags[Number(index)]}</lukso-tag>
+                  </div>
+                ))
               ) : (
-                <lukso-button
-                  custom-class="ml-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  disabled
-                >
-                  Change Data Key URI
-                </lukso-button>
+                <></>
               )}
             </div>
-            <div className="flex flex-col items-center mb-4">
-              {connected ? (
-                <lukso-button
-                  custom-class="mb-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  onClick={async (event) => getTokenUri(event)}
-                >
-                  Fetch Token URI
-                </lukso-button>
-              ) : (
-                <lukso-button
-                  custom-class="mb-4"
-                  variant="landing"
-                  size="medium"
-                  type="button"
-                  count="0"
-                  disabled
-                >
-                  Fetch Token URI
-                </lukso-button>
-              )}
-              {fetchedUri ? fetchedUri : <></>}
-            </div>
+            <em className="mt-2 pt-2 border-t-2">{description}</em>
           </div>
         </lukso-card>
-      </div>
-      {error ? (
-        <lukso-modal is-open>
-          <div className="p-6">
-            {error}
-            <p className="pt-6">
-              <lukso-button
-                is-full-width
-                variant="landing"
-                onClick={() => setError(undefined)}
-              >
-                Close
-              </lukso-button>
-            </p>
+      );
+    }
+  };
+
+  return (
+    <Router>
+      <div className="min-h-screen relative">
+        <Navbar setError={setError} />
+
+        <div className="m-4 flex flex-col justify-center content-center">
+          <div className="my-4">
+            {!account ? (
+              <lukso-card variant="basic" size="medium">
+                <div
+                  slot="content"
+                  className="p-6 flex flex-row items-center justify-center"
+                >
+                  <p className="paragraph-inter-20-regular">
+                    Please connect with the browser extansion in order to use
+                    the app.
+                  </p>
+                  <lukso-button
+                    variant="landing"
+                    custom-class="ml-4"
+                    onClick={async () => await connect()}
+                  >
+                    Connect
+                  </lukso-button>
+                </div>
+              </lukso-card>
+            ) : (
+              account
+            )}
           </div>
-        </lukso-modal>
-      ) : (
-        <></>
-      )}
-    </div>
+
+          <BrowserExtensionContext.Provider value={{ signer, provider }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+
+              <Route
+                path="/deploy-lsp7"
+                element={<DeployLSP7 setError={setError} />}
+              />
+
+              <Route
+                path="/deploy-lsp8"
+                element={<DeployLSP8 setError={setError} />}
+              />
+
+              <Route
+                path="/issued-assets"
+                element={<IssuedAssets setError={setError} />}
+              />
+            </Routes>
+          </BrowserExtensionContext.Provider>
+        </div>
+        {error ? (
+          <lukso-modal is-open>
+            <div className="p-6">
+              {error}
+              <p className="pt-6">
+                <lukso-button
+                  is-full-width
+                  variant="landing"
+                  onClick={() => setError(undefined)}
+                >
+                  Close
+                </lukso-button>
+              </p>
+            </div>
+          </lukso-modal>
+        ) : (
+          <></>
+        )}
+      </div>
+    </Router>
   );
 }
 
