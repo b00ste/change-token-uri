@@ -22,3 +22,6 @@ export const URD_PERMISSIONS =
 
 export const SALTED_UP_FACTORY_ADDRESS =
   "0x238aAB3b68fA761726fEE6793e44617b6443A0E0";
+
+export const lsp7_0_12_1_interface_id = "0xdaa746b7";
+export const lsp8_0_12_1_interface_id = "0x30dc5278";

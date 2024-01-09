@@ -4,9 +4,10 @@
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@erc725/smart-contracts": "^6.0.0",
-    "@lukso/lsp-smart-contracts": "^0.12.1",
-    "@lukso/web-components": "^1.51.0",
+    "@erc725/smart-contracts": "^7.0.0",
+    "@lukso/lsp-smart-contracts": "^0.14.0",
+    "@lukso/web-components": "^1.56.0",
+    "@openzeppelin/contracts": "^5.0.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

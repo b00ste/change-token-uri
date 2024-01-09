@@ -1,13 +1,20 @@
 import { concat, isAddress, toBeHex, toNumber } from "ethers";
 import { Suspense, useContext, useEffect, useState, Fragment } from "react";
-import { ERC725YDataKeys } from "@lukso/lsp-smart-contracts";
+import { ERC725YDataKeys, INTERFACE_IDS } from "@lukso/lsp-smart-contracts";
 
 // types
 import { ERC725Y, ERC725Y__factory } from "../types";
 
 // context
 import { BrowserExtensionContext } from "../App";
-import AssetMetadata from "../components/AssetMetadata";
+
+// components
+import LSP7Asset from "../components/LSP7Asset";
+import LSP8Asset from "../components/LSP8Asset";
+import {
+  lsp7_0_12_1_interface_id,
+  lsp8_0_12_1_interface_id,
+} from "../helpers/constants";
 
 interface Props {
   setError: React.Dispatch<React.SetStateAction<JSX.Element | undefined>>;
@@ -19,7 +26,6 @@ const IssuedAssets: React.FC<Props> = ({ setError }) => {
 
   const [issuedAssets, setIssuedAssets] =
     useState<{ address: string; interfaceId: string }[]>();
-  const [selectedToken, setSelectedToken] = useState<string>();
 
   // const [tokenAddress, setTokenAddress] = useState<string>();
   // const [tokenUri, setTokenUri] = useState<string>();
@@ -310,61 +316,55 @@ const IssuedAssets: React.FC<Props> = ({ setError }) => {
     <Suspense>
       {signer ? (
         <>
-          <div className="mb-4">
-            <lukso-card variant="basic" size="medium">
-              <div slot="content" className="p-6 flex flex-col items-center">
-                {issuedAssets && issuedAssets.length ? (
-                  <>
-                    {issuedAssets.map(({ address }) => (
-                      <div key={address} className="flex">
-                        <div className="hover:cursor-pointer hover:opacity-80 underline-offset-1">
-                          <lukso-username
-                            address-color="purple-51"
-                            className="underline-offset-1"
-                            custom-class="underline-offset-1"
-                            address={address}
-                            onClick={() => setSelectedToken(address)}
-                          />
-                        </div>
-                        <span
-                          className={`${
-                            selectedToken === address
-                              ? "opacity-100"
-                              : "opacity-0 hidden"
-                          } transition-opacity ml-2`}
-                        >
-                          ✅
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                ) : (
-                  <p>
-                    You have no Issued Assets stored on your Universal Profile
-                  </p>
-                )}
-              </div>
-            </lukso-card>
-          </div>
-
-          {selectedToken ? (
-            <AssetMetadata selectedToken={selectedToken} />
-          ) : (
+          {!issuedAssets || issuedAssets.length === 0 ? (
             <></>
+          ) : (
+            <div className="flex flex-wrap justify-center">
+              <div className="w-screen text-start m-4 font-600 text-24">
+                Issued Assets
+              </div>
+              <div className="w-screen text-start m-4 font-600 text-24">
+                <p>Tokens</p>
+                {issuedAssets
+                  ?.filter(({ interfaceId }) =>
+                    [
+                      INTERFACE_IDS.LSP7DigitalAsset,
+                      lsp7_0_12_1_interface_id,
+                    ].includes(interfaceId)
+                  )
+                  .map(({ address, interfaceId }) => (
+                    <LSP7Asset address={address} />
+                  ))}
+              </div>
+              <div className="w-screen text-start m-4 font-600 text-24">
+                <p>Collectibles</p>
+                {issuedAssets
+                  ?.filter(({ interfaceId }) =>
+                    [
+                      INTERFACE_IDS.LSP8IdentifiableDigitalAsset,
+                      lsp8_0_12_1_interface_id,
+                    ].includes(interfaceId)
+                  )
+                  .map(({ address, interfaceId }) => (
+                    <LSP8Asset address={address} />
+                  ))}
+              </div>
+            </div>
           )}
         </>
       ) : (
-        <lukso-card variant="basic" size="medium">
-          <div
-            slot="content"
-            className="p-6 flex justify-center content-center"
-          >
-            <p>
-              Please connect with your Universal Profile Browser Extension in
-              order to see the Issued Assets
-            </p>
-          </div>
-        </lukso-card>
+        <></>
+        // <lukso-card variant="basic" size="medium">
+        //   <div
+        //     slot="content"
+        //     className="p-6 flex justify-center content-center"
+        //   >
+        //     <p>
+        //       Please connect with your Universal Profile Browser Extension in
+        //       order to see the Issued Assets
+        //     </p>
+        //   </div>
+        // </lukso-card>
       )}
 
       {/* <lukso-card variant="basic" custom-class="" size="medium">

@@ -34,6 +34,8 @@ interface Props {
 const DeployLSP7: React.FC<Props> = ({ setError }) => {
   const { signer, provider } = useContext(BrowserExtensionContext);
 
+  const [isOpen, setIsOpen] = useState(false);
+
   const [tokenName, setTokenName] = useState<string>();
   const [tokenSymbol, setTokenSymbol] = useState<string>();
   const [tokenOwner, setTokenOwner] = useState<string>();
@@ -139,6 +141,7 @@ const DeployLSP7: React.FC<Props> = ({ setError }) => {
     const issuedAssetsCountHex = await universalProfile.getData(
       ERC725YDataKeys.LSP12["LSP12IssuedAssets[]"].length
     );
+
     const issuedAssetsCount =
       issuedAssetsCountHex === "0x" ? 0 : toNumber(issuedAssetsCountHex);
 
@@ -199,94 +202,127 @@ const DeployLSP7: React.FC<Props> = ({ setError }) => {
   return (
     <>
       {signer && provider ? (
-        <lukso-card variant="with-header" size="medium">
-          <div slot="header" className="p-6">
-            <p className="heading-inter-17-semi-bold">
-              Deploy a LSP7 Digital Asset
-            </p>
-          </div>
-          <div slot="content" className="p-6 flex flex-col items-center">
-            <lukso-input
-              placeholder="Token Name"
-              custom-class="mb-4"
-              onInput={(event) =>
-                onTokenNameInput(
-                  event as unknown as FormEvent<HTMLInputElement>
-                )
-              }
-              value={tokenName}
-            />
-            <lukso-input
-              placeholder="Token Symbol"
-              custom-class="mb-4"
-              onInput={(event) =>
-                onTokenSymbolInput(
-                  event as unknown as FormEvent<HTMLInputElement>
-                )
-              }
-              value={tokenSymbol}
-            />
-            <lukso-input
-              placeholder="Token Owner"
-              custom-class="mb-4"
-              onInput={(event) =>
-                onTokenOwnerInput(
-                  event as unknown as FormEvent<HTMLInputElement>
-                )
-              }
-              value={tokenOwner}
-            />
-            <div className="mb-4">
-              <lukso-checkbox
-                name="input"
-                type="text"
-                size="small"
-                onInput={(event) =>
-                  onTokenDivisibilityUpdate(
-                    event as unknown as FormEvent<HTMLFormElement>
-                  )
-                }
-              >
-                Divisible Token
-              </lukso-checkbox>
-            </div>
-            {tokenName && tokenSymbol && tokenOwner ? (
-              <lukso-button
-                custom-class="mb-4"
-                variant="landing"
-                size="medium"
-                type="button"
-                count="0"
-                onClick={async (event) => await deployAsset(event)}
-              >
-                Deploy Asset
-              </lukso-button>
-            ) : (
-              <lukso-button
-                custom-class="mb-4"
-                variant="landing"
-                size="medium"
-                type="button"
-                count="0"
-                disabled
-              >
-                Deploy Asset
-              </lukso-button>
-            )}
-          </div>
-        </lukso-card>
-      ) : (
-        <lukso-card variant="basic" size="medium">
-          <div
-            slot="content"
-            className="p-6 flex justify-center content-center"
+        <>
+          {isOpen ? (
+            <lukso-modal is-open size="medium">
+              <div className="p-6 flex flex-col items-center">
+                <lukso-input
+                  placeholder="Token Name"
+                  custom-class="mb-4"
+                  onInput={(event) =>
+                    onTokenNameInput(
+                      event as unknown as FormEvent<HTMLInputElement>
+                    )
+                  }
+                  value={tokenName}
+                />
+                <lukso-input
+                  placeholder="Token Symbol"
+                  custom-class="mb-4"
+                  onInput={(event) =>
+                    onTokenSymbolInput(
+                      event as unknown as FormEvent<HTMLInputElement>
+                    )
+                  }
+                  value={tokenSymbol}
+                />
+                <lukso-input
+                  placeholder="Token Owner"
+                  custom-class="mb-4"
+                  onInput={(event) =>
+                    onTokenOwnerInput(
+                      event as unknown as FormEvent<HTMLInputElement>
+                    )
+                  }
+                  value={tokenOwner}
+                />
+                <div className="mb-4">
+                  <lukso-checkbox
+                    name="input"
+                    type="text"
+                    size="small"
+                    onInput={(event) =>
+                      onTokenDivisibilityUpdate(
+                        event as unknown as FormEvent<HTMLFormElement>
+                      )
+                    }
+                  >
+                    Divisible Token
+                  </lukso-checkbox>
+                </div>
+                {tokenName && tokenSymbol && tokenOwner ? (
+                  <lukso-button
+                    custom-class="mb-4"
+                    variant="landing"
+                    size="medium"
+                    type="button"
+                    count="0"
+                    onClick={async (event) => await deployAsset(event)}
+                  >
+                    Deploy Asset
+                  </lukso-button>
+                ) : (
+                  <lukso-button
+                    custom-class="mb-4"
+                    variant="landing"
+                    size="medium"
+                    type="button"
+                    count="0"
+                    disabled
+                  >
+                    Deploy Asset
+                  </lukso-button>
+                )}
+                <lukso-button
+                  variant="landing"
+                  size="medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Close
+                </lukso-button>
+              </div>
+            </lukso-modal>
+          ) : (
+            <></>
+          )}
+          <lukso-button
+            variant="landing"
+            size="medium"
+            onClick={() => setIsOpen(true)}
           >
-            <p>
-              Please connect with your Universal Profile Browser Extension in
-              order to deploy an asset
-            </p>
-          </div>
-        </lukso-card>
+            Create LSP7
+          </lukso-button>
+        </>
+      ) : (
+        <>
+          {isOpen ? (
+            <lukso-modal is-open size="small">
+              <div className="p-6 flex flex-col items-center">
+                <h1 className="heading-inter-26-semi-bold pb-4">Lorem ipsum</h1>
+                <p className="paragraph-inter-16-regular">
+                  Please connect with your Universal Profile Browser Extension
+                  in order to deploy an asset
+                </p>
+                <lukso-button
+                  variant="landing"
+                  size="medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Close
+                </lukso-button>
+              </div>
+            </lukso-modal>
+          ) : (
+            <></>
+          )}
+          <lukso-button
+            variant="landing"
+            size="medium"
+            onClick={() => setIsOpen(true)}
+          >
+            Create LSP7
+          </lukso-button>
+        </>
       )}
     </>
   );

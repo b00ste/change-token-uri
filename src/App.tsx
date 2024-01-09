@@ -1,18 +1,16 @@
 import { useState, createContext } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { BrowserProvider, Signer } from "ethers";
 
 // components
 import Navbar from "./components/Navbar";
-
-// pages
-import Home from "./pages/Home";
 import DeployLSP7 from "./pages/DeployLSP7";
 import DeployLSP8 from "./pages/DeployLSP8";
 import IssuedAssets from "./pages/IssuedAssets";
 
 // helpers
 import { getSigner, getUniversalProfileData } from "./helpers/utils";
+import ReceivedAssets from "./pages/ReceivedAssets";
+import UniversalReceiverLogs from "./pages/UniversalReceiverLogs";
 
 export const BrowserExtensionContext = createContext<{
   provider?: BrowserProvider;
@@ -24,6 +22,7 @@ function App() {
   const [provider, setProvider] = useState<BrowserProvider>();
   const [signer, setSigner] = useState<Signer>();
   const [account, setAccount] = useState<JSX.Element>();
+
   const connect = async () => {
     const { signer, provider, error } = await getSigner();
 
@@ -59,13 +58,12 @@ function App() {
 
       setAccount(
         <lukso-card
-          variant="profile"
+          variant="profile-2"
           background-url={backgroundImageUrl}
           profile-url={profileImageUrl}
           profile-address={signer.address}
           size="medium"
         >
-          <div slot="header" className="p-6"></div>
           <div slot="content" className="px-6 pb-9 flex flex-col items-center">
             <lukso-username
               name={name || "anonymous"}
@@ -113,35 +111,63 @@ function App() {
             </div>
             <em className="mt-2 pt-2 border-t-2">{description}</em>
           </div>
+          <div
+            slot="bottom"
+            className="p-6 flex flex-row flex-wrap justify-center"
+          >
+            <div className="mx-2">
+              <DeployLSP7 setError={setError} />
+            </div>
+            <div className="mx-2">
+              <DeployLSP8 setError={setError} />
+            </div>
+          </div>
         </lukso-card>
       );
     }
   };
 
-  return (
-    <Router>
-      <div className="min-h-screen relative">
-        <Navbar setError={setError} />
+  const disconnect = () => {
+    setSigner(undefined);
+    setProvider(undefined);
+    setAccount(undefined);
+  };
 
-        <div className="m-4 flex flex-col justify-center content-center">
+  return (
+    <div className="">
+      <Navbar setError={setError}>
+        {!account ? (
+          <lukso-button
+            variant="landing"
+            custom-class="m-2"
+            onClick={async () => await connect()}
+          >
+            Connect
+          </lukso-button>
+        ) : (
+          <lukso-button
+            variant="landing"
+            custom-class="m-2"
+            onClick={async () => disconnect()}
+          >
+            Disconnect
+          </lukso-button>
+        )}
+      </Navbar>
+
+      <div className="mx-4 pb-4 flex flex-col justify-center content-center">
+        <BrowserExtensionContext.Provider value={{ signer, provider }}>
           <div className="my-4">
             {!account ? (
-              <lukso-card variant="basic" size="medium">
+              <lukso-card variant="basic" size="medium" is-fixed-height>
                 <div
                   slot="content"
-                  className="p-6 flex flex-row items-center justify-center"
+                  className="p-6 flex flex-row items-center justify-center content-center h-full"
                 >
                   <p className="paragraph-inter-20-regular">
                     Please connect with the browser extansion in order to use
                     the app.
                   </p>
-                  <lukso-button
-                    variant="landing"
-                    custom-class="ml-4"
-                    onClick={async () => await connect()}
-                  >
-                    Connect
-                  </lukso-button>
                 </div>
               </lukso-card>
             ) : (
@@ -149,47 +175,30 @@ function App() {
             )}
           </div>
 
-          <BrowserExtensionContext.Provider value={{ signer, provider }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-
-              <Route
-                path="/deploy-lsp7"
-                element={<DeployLSP7 setError={setError} />}
-              />
-
-              <Route
-                path="/deploy-lsp8"
-                element={<DeployLSP8 setError={setError} />}
-              />
-
-              <Route
-                path="/issued-assets"
-                element={<IssuedAssets setError={setError} />}
-              />
-            </Routes>
-          </BrowserExtensionContext.Provider>
-        </div>
-        {error ? (
-          <lukso-modal is-open>
-            <div className="p-6">
-              {error}
-              <p className="pt-6">
-                <lukso-button
-                  is-full-width
-                  variant="landing"
-                  onClick={() => setError(undefined)}
-                >
-                  Close
-                </lukso-button>
-              </p>
-            </div>
-          </lukso-modal>
-        ) : (
-          <></>
-        )}
+          <IssuedAssets setError={setError} />
+          <ReceivedAssets setError={setError} />
+          {/* <UniversalReceiverLogs /> */}
+        </BrowserExtensionContext.Provider>
       </div>
-    </Router>
+      {error ? (
+        <lukso-modal is-open>
+          <div className="p-6">
+            {error}
+            <p className="pt-6">
+              <lukso-button
+                is-full-width
+                variant="landing"
+                onClick={() => setError(undefined)}
+              >
+                Close
+              </lukso-button>
+            </p>
+          </div>
+        </lukso-modal>
+      ) : (
+        <></>
+      )}
+    </div>
   );
 }
 
