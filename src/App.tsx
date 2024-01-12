@@ -11,6 +11,7 @@ import IssuedAssets from "./pages/IssuedAssets";
 import { getSigner, getUniversalProfileData } from "./helpers/utils";
 import ReceivedAssets from "./pages/ReceivedAssets";
 import UniversalReceiverLogs from "./pages/UniversalReceiverLogs";
+import ScanLSP8 from "./pages/ScanLSP8";
 
 export const BrowserExtensionContext = createContext<{
   provider?: BrowserProvider;
@@ -120,6 +121,9 @@ function App() {
             </div>
             <div className="mx-2">
               <DeployLSP8 setError={setError} />
+            </div>
+            <div className="mx-2">
+              <ScanLSP8 />
             </div>
           </div>
         </lukso-card>

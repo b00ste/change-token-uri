@@ -31,6 +31,7 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
       | "allowlist"
       | "authorizeOperator"
       | "balanceOf"
+      | "batchCalls"
       | "claim"
       | "claimBalanceOf"
       | "configure"
@@ -38,6 +39,8 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
       | "defaultTokenUri"
       | "getData"
       | "getDataBatch"
+      | "getDataBatchForTokenIds"
+      | "getDataForTokenId"
       | "getOperatorsOf"
       | "isOperatorFor"
       | "mint"
@@ -51,6 +54,8 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
       | "serviceFeePoints"
       | "setData"
       | "setDataBatch"
+      | "setDataBatchForTokenIds"
+      | "setDataForTokenId"
       | "setDefaultTokenUri"
       | "startTime"
       | "supportsInterface"
@@ -68,15 +73,16 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "Activated"
-      | "AuthorizedOperator"
       | "Claimed"
       | "ConfigurationChanged"
       | "DataChanged"
       | "Deactivated"
       | "DefaultTokenDataChanged"
       | "Minted"
+      | "OperatorAuthorizationChanged"
+      | "OperatorRevoked"
       | "OwnershipTransferred"
-      | "RevokedOperator"
+      | "TokenIdDataChanged"
       | "Transfer"
   ): EventFragment;
 
@@ -90,6 +96,10 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
   encodeFunctionData(
     functionFragment: "balanceOf",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "batchCalls",
+    values: [BytesLike[]]
   ): string;
   encodeFunctionData(
     functionFragment: "claim",
@@ -115,6 +125,14 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getDataBatch",
     values: [BytesLike[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDataBatchForTokenIds",
+    values: [BytesLike[], BytesLike[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDataForTokenId",
+    values: [BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "getOperatorsOf",
@@ -168,6 +186,14 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
     values: [BytesLike[], BytesLike[]]
   ): string;
   encodeFunctionData(
+    functionFragment: "setDataBatchForTokenIds",
+    values: [BytesLike[], BytesLike[], BytesLike[]]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setDataForTokenId",
+    values: [BytesLike, BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setDefaultTokenUri",
     values: [BytesLike]
   ): string;
@@ -218,6 +244,7 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "batchCalls", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "claimBalanceOf",
@@ -232,6 +259,14 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
   decodeFunctionResult(functionFragment: "getData", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getDataBatch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDataBatchForTokenIds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getDataForTokenId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -269,6 +304,14 @@ export interface LSP8DropsDigitalAssetInterface extends Interface {
   decodeFunctionResult(functionFragment: "setData", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setDataBatch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setDataBatchForTokenIds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setDataForTokenId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -310,31 +353,6 @@ export namespace ActivatedEvent {
   export type InputTuple = [];
   export type OutputTuple = [];
   export interface OutputObject {}
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace AuthorizedOperatorEvent {
-  export type InputTuple = [
-    operator: AddressLike,
-    tokenOwner: AddressLike,
-    tokenId: BytesLike,
-    operatorNotificationData: BytesLike
-  ];
-  export type OutputTuple = [
-    operator: string,
-    tokenOwner: string,
-    tokenId: string,
-    operatorNotificationData: string
-  ];
-  export interface OutputObject {
-    operator: string;
-    tokenOwner: string;
-    tokenId: string;
-    operatorNotificationData: string;
-  }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -445,12 +463,24 @@ export namespace MintedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace OwnershipTransferredEvent {
-  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
-  export type OutputTuple = [previousOwner: string, newOwner: string];
+export namespace OperatorAuthorizationChangedEvent {
+  export type InputTuple = [
+    operator: AddressLike,
+    tokenOwner: AddressLike,
+    tokenId: BytesLike,
+    operatorNotificationData: BytesLike
+  ];
+  export type OutputTuple = [
+    operator: string,
+    tokenOwner: string,
+    tokenId: string,
+    operatorNotificationData: string
+  ];
   export interface OutputObject {
-    previousOwner: string;
-    newOwner: string;
+    operator: string;
+    tokenOwner: string;
+    tokenId: string;
+    operatorNotificationData: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -458,7 +488,7 @@ export namespace OwnershipTransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace RevokedOperatorEvent {
+export namespace OperatorRevokedEvent {
   export type InputTuple = [
     operator: AddressLike,
     tokenOwner: AddressLike,
@@ -479,6 +509,41 @@ export namespace RevokedOperatorEvent {
     tokenId: string;
     notified: boolean;
     operatorNotificationData: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferredEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TokenIdDataChangedEvent {
+  export type InputTuple = [
+    tokenId: BytesLike,
+    dataKey: BytesLike,
+    dataValue: BytesLike
+  ];
+  export type OutputTuple = [
+    tokenId: string,
+    dataKey: string,
+    dataValue: string
+  ];
+  export interface OutputObject {
+    tokenId: string;
+    dataKey: string;
+    dataValue: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -578,6 +643,12 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
 
   balanceOf: TypedContractMethod<[tokenOwner: AddressLike], [bigint], "view">;
 
+  batchCalls: TypedContractMethod<
+    [data: BytesLike[]],
+    [string[]],
+    "nonpayable"
+  >;
+
   claim: TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
     [void],
@@ -606,6 +677,18 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
   getDataBatch: TypedContractMethod<
     [dataKeys: BytesLike[]],
     [string[]],
+    "view"
+  >;
+
+  getDataBatchForTokenIds: TypedContractMethod<
+    [tokenIds: BytesLike[], dataKeys: BytesLike[]],
+    [string[]],
+    "view"
+  >;
+
+  getDataForTokenId: TypedContractMethod<
+    [tokenId: BytesLike, dataKey: BytesLike],
+    [string],
     "view"
   >;
 
@@ -676,6 +759,18 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     [dataKeys: BytesLike[], dataValues: BytesLike[]],
     [void],
     "payable"
+  >;
+
+  setDataBatchForTokenIds: TypedContractMethod<
+    [tokenIds: BytesLike[], dataKeys: BytesLike[], dataValues: BytesLike[]],
+    [void],
+    "nonpayable"
+  >;
+
+  setDataForTokenId: TypedContractMethod<
+    [tokenId: BytesLike, dataKey: BytesLike, dataValue: BytesLike],
+    [void],
+    "nonpayable"
   >;
 
   setDefaultTokenUri: TypedContractMethod<
@@ -766,6 +861,9 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[tokenOwner: AddressLike], [bigint], "view">;
   getFunction(
+    nameOrSignature: "batchCalls"
+  ): TypedContractMethod<[data: BytesLike[]], [string[]], "nonpayable">;
+  getFunction(
     nameOrSignature: "claim"
   ): TypedContractMethod<
     [beneficiary: AddressLike, amount: BigNumberish],
@@ -799,6 +897,20 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
   getFunction(
     nameOrSignature: "getDataBatch"
   ): TypedContractMethod<[dataKeys: BytesLike[]], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getDataBatchForTokenIds"
+  ): TypedContractMethod<
+    [tokenIds: BytesLike[], dataKeys: BytesLike[]],
+    [string[]],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getDataForTokenId"
+  ): TypedContractMethod<
+    [tokenId: BytesLike, dataKey: BytesLike],
+    [string],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getOperatorsOf"
   ): TypedContractMethod<[tokenId: BytesLike], [string[]], "view">;
@@ -882,6 +994,20 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     "payable"
   >;
   getFunction(
+    nameOrSignature: "setDataBatchForTokenIds"
+  ): TypedContractMethod<
+    [tokenIds: BytesLike[], dataKeys: BytesLike[], dataValues: BytesLike[]],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "setDataForTokenId"
+  ): TypedContractMethod<
+    [tokenId: BytesLike, dataKey: BytesLike, dataValue: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "setDefaultTokenUri"
   ): TypedContractMethod<[newTokenUri: BytesLike], [void], "nonpayable">;
   getFunction(
@@ -946,13 +1072,6 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     ActivatedEvent.OutputObject
   >;
   getEvent(
-    key: "AuthorizedOperator"
-  ): TypedContractEvent<
-    AuthorizedOperatorEvent.InputTuple,
-    AuthorizedOperatorEvent.OutputTuple,
-    AuthorizedOperatorEvent.OutputObject
-  >;
-  getEvent(
     key: "Claimed"
   ): TypedContractEvent<
     ClaimedEvent.InputTuple,
@@ -995,6 +1114,20 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     MintedEvent.OutputObject
   >;
   getEvent(
+    key: "OperatorAuthorizationChanged"
+  ): TypedContractEvent<
+    OperatorAuthorizationChangedEvent.InputTuple,
+    OperatorAuthorizationChangedEvent.OutputTuple,
+    OperatorAuthorizationChangedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OperatorRevoked"
+  ): TypedContractEvent<
+    OperatorRevokedEvent.InputTuple,
+    OperatorRevokedEvent.OutputTuple,
+    OperatorRevokedEvent.OutputObject
+  >;
+  getEvent(
     key: "OwnershipTransferred"
   ): TypedContractEvent<
     OwnershipTransferredEvent.InputTuple,
@@ -1002,11 +1135,11 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
     OwnershipTransferredEvent.OutputObject
   >;
   getEvent(
-    key: "RevokedOperator"
+    key: "TokenIdDataChanged"
   ): TypedContractEvent<
-    RevokedOperatorEvent.InputTuple,
-    RevokedOperatorEvent.OutputTuple,
-    RevokedOperatorEvent.OutputObject
+    TokenIdDataChangedEvent.InputTuple,
+    TokenIdDataChangedEvent.OutputTuple,
+    TokenIdDataChangedEvent.OutputObject
   >;
   getEvent(
     key: "Transfer"
@@ -1026,17 +1159,6 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
       ActivatedEvent.InputTuple,
       ActivatedEvent.OutputTuple,
       ActivatedEvent.OutputObject
-    >;
-
-    "AuthorizedOperator(address,address,bytes32,bytes)": TypedContractEvent<
-      AuthorizedOperatorEvent.InputTuple,
-      AuthorizedOperatorEvent.OutputTuple,
-      AuthorizedOperatorEvent.OutputObject
-    >;
-    AuthorizedOperator: TypedContractEvent<
-      AuthorizedOperatorEvent.InputTuple,
-      AuthorizedOperatorEvent.OutputTuple,
-      AuthorizedOperatorEvent.OutputObject
     >;
 
     "Claimed(address,address,uint256)": TypedContractEvent<
@@ -1105,6 +1227,28 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
       MintedEvent.OutputObject
     >;
 
+    "OperatorAuthorizationChanged(address,address,bytes32,bytes)": TypedContractEvent<
+      OperatorAuthorizationChangedEvent.InputTuple,
+      OperatorAuthorizationChangedEvent.OutputTuple,
+      OperatorAuthorizationChangedEvent.OutputObject
+    >;
+    OperatorAuthorizationChanged: TypedContractEvent<
+      OperatorAuthorizationChangedEvent.InputTuple,
+      OperatorAuthorizationChangedEvent.OutputTuple,
+      OperatorAuthorizationChangedEvent.OutputObject
+    >;
+
+    "OperatorRevoked(address,address,bytes32,bool,bytes)": TypedContractEvent<
+      OperatorRevokedEvent.InputTuple,
+      OperatorRevokedEvent.OutputTuple,
+      OperatorRevokedEvent.OutputObject
+    >;
+    OperatorRevoked: TypedContractEvent<
+      OperatorRevokedEvent.InputTuple,
+      OperatorRevokedEvent.OutputTuple,
+      OperatorRevokedEvent.OutputObject
+    >;
+
     "OwnershipTransferred(address,address)": TypedContractEvent<
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
@@ -1116,15 +1260,15 @@ export interface LSP8DropsDigitalAsset extends BaseContract {
       OwnershipTransferredEvent.OutputObject
     >;
 
-    "RevokedOperator(address,address,bytes32,bool,bytes)": TypedContractEvent<
-      RevokedOperatorEvent.InputTuple,
-      RevokedOperatorEvent.OutputTuple,
-      RevokedOperatorEvent.OutputObject
+    "TokenIdDataChanged(bytes32,bytes32,bytes)": TypedContractEvent<
+      TokenIdDataChangedEvent.InputTuple,
+      TokenIdDataChangedEvent.OutputTuple,
+      TokenIdDataChangedEvent.OutputObject
     >;
-    RevokedOperator: TypedContractEvent<
-      RevokedOperatorEvent.InputTuple,
-      RevokedOperatorEvent.OutputTuple,
-      RevokedOperatorEvent.OutputObject
+    TokenIdDataChanged: TypedContractEvent<
+      TokenIdDataChangedEvent.InputTuple,
+      TokenIdDataChangedEvent.OutputTuple,
+      TokenIdDataChangedEvent.OutputObject
     >;
 
     "Transfer(address,address,address,bytes32,bool,bytes)": TypedContractEvent<
